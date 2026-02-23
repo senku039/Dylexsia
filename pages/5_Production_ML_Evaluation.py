@@ -65,7 +65,61 @@ def _parse_train_stdout(stdout: str) -> tuple[pd.DataFrame | None, pd.DataFrame 
     return summary_df, fold_df
 
 
+def _pretty_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
+    metric_names = {
+        "accuracy": "Overall Accuracy",
+        "balanced_accuracy": "Balanced Accuracy",
+        "sensitivity": "Sensitivity (Recall for Dyslexic)",
+        "specificity": "Specificity (Recall for Control)",
+        "f1": "F1 Score",
+        "mcc": "Matthews Correlation (MCC)",
+        "roc_auc": "ROC-AUC",
+        "pr_auc": "PR-AUC",
+    }
+
+    df = summary_df.copy()
+    for col in ["mean", "std", "ci95_low", "ci95_high"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    out = pd.DataFrame(index=df.index)
+    out["Metric"] = [metric_names.get(idx, idx) for idx in df.index]
+    out["Mean (%)"] = (df["mean"] * 100).round(2)
+    out["95% CI (%)"] = (
+        (df["ci95_low"] * 100).round(2).astype(str)
+        + " to "
+        + (df["ci95_high"] * 100).round(2).astype(str)
+    )
+    out["Std Dev (%)"] = (df["std"] * 100).round(2)
+    return out.reset_index(drop=True)
+
+
+def _pretty_fold_diag(fold_df: pd.DataFrame) -> pd.DataFrame:
+    fd = fold_df.copy()
+    for col in fd.columns:
+        fd[col] = pd.to_numeric(fd[col], errors="ignore")
+
+    rename_map = {
+        "repeat": "Repeat",
+        "fold": "Fold",
+        "threshold": "Decision Threshold",
+        "inner_best_roc_auc": "Best Inner ROC-AUC",
+        "inner_best_score_roc_auc": "Best Inner ROC-AUC",
+        "roc_auc": "Outer ROC-AUC",
+        "pr_auc": "Outer PR-AUC",
+        "balanced_accuracy": "Outer Balanced Accuracy",
+    }
+    fd = fd.rename(columns=rename_map)
+
+    for col in ["Decision Threshold", "Best Inner ROC-AUC", "Outer ROC-AUC", "Outer PR-AUC", "Outer Balanced Accuracy"]:
+        if col in fd.columns:
+            fd[col] = pd.to_numeric(fd[col], errors="coerce").round(4)
+
+    return fd
+
+
 st.title("Production ML Evaluation")
+st.caption("Run the production pipeline and view an easy-to-understand summary.")
 
 smoke = st.toggle("Smoke-test mode", value=True)
 model = st.selectbox("Model", ["logreg", "rf"], index=0)
@@ -101,17 +155,40 @@ if st.button("Run Evaluation", type="primary"):
 
         summary_df, fold_df = _parse_train_stdout(proc.stdout)
 
-        st.subheader("Run Evaluation Summary")
+        st.subheader("Simple Performance Summary")
+        st.markdown(
+            "- **Mean (%)**: average model performance across all outer folds.\n"
+            "- **95% CI (%)**: expected range of performance stability.\n"
+            "- **Std Dev (%)**: variability across folds (lower is better)."
+        )
+
         if summary_df is not None and not summary_df.empty:
-            st.dataframe(summary_df, width="stretch")
+            pretty = _pretty_summary(summary_df)
+            st.dataframe(pretty, width="stretch", hide_index=True)
+
+            try:
+                acc = float(summary_df.loc["accuracy", "mean"]) * 100
+                bal = float(summary_df.loc["balanced_accuracy", "mean"]) * 100
+                sens = float(summary_df.loc["sensitivity", "mean"]) * 100
+                spec = float(summary_df.loc["specificity", "mean"]) * 100
+
+                c1, c2, c3, c4 = st.columns(4)
+                c1.markdown(f"<div class='metric-card'><b>Accuracy</b><br><span style='font-size:1.35rem'>{acc:.2f}%</span></div>", unsafe_allow_html=True)
+                c2.markdown(f"<div class='metric-card'><b>Balanced Accuracy</b><br><span style='font-size:1.35rem'>{bal:.2f}%</span></div>", unsafe_allow_html=True)
+                c3.markdown(f"<div class='metric-card'><b>Sensitivity</b><br><span style='font-size:1.35rem'>{sens:.2f}%</span></div>", unsafe_allow_html=True)
+                c4.markdown(f"<div class='metric-card'><b>Specificity</b><br><span style='font-size:1.35rem'>{spec:.2f}%</span></div>", unsafe_allow_html=True)
+            except Exception:
+                pass
         else:
             st.info("Could not parse summary table from train output.")
 
-        st.subheader("Fold Diagnostics (from train.py)")
+        st.subheader("Fold-by-Fold Diagnostics")
+        st.markdown("Each row is one outer-fold run. Use this table to inspect consistency.")
         if fold_df is not None and not fold_df.empty:
-            st.dataframe(fold_df, width="stretch")
+            fold_pretty = _pretty_fold_diag(fold_df)
+            st.dataframe(fold_pretty, width="stretch", hide_index=True)
 
-            csv_data = fold_df.to_csv(index=False)
+            csv_data = fold_pretty.to_csv(index=False)
             st.download_button(
                 "Download Fold Diagnostics CSV",
                 data=csv_data,
