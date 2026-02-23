@@ -16,3 +16,7 @@ We've divided our entire work into easy follow along Python notebooks which you 
 5. [Perceptron](https://github.com/algoasylum/Dyslexia_detection/blob/master/4_STFT%20and%20Perceptron/2_Perceptron.ipynb)
 6. [Perceptron organized 70TR](https://github.com/algoasylum/Dyslexia_detection/blob/master/4_STFT%20and%20Perceptron/3_Perceptron-organised-70TR.ipynb)
 7. [Frequency Modulation](https://github.com/algoasylum/Dyslexia_detection/blob/master/4_STFT%20and%20Perceptron/4_Frequency%20Mod.ipynb)
+
+## Production-ready redesign
+A production-oriented baseline (modular data loading, feature engineering, repeated stratified cross-validation, and richer metrics) is available in [`5_Production_ML/README.md`](5_Production_ML/README.md).
+
