@@ -9,6 +9,28 @@ from sklearn.decomposition import PCA
 
 from streamlit_utils import fft_figure, load_subject_table
 
+
+def _safe_binned_fft_vector(df: pd.DataFrame, bins: int) -> np.ndarray | None:
+    df_numeric = df.select_dtypes(include=["number"])
+    if df_numeric.shape[1] == 0:
+        return None
+
+    z = df_numeric.values.flatten()
+    z = z.astype(float)
+    z = z[~np.isnan(z)]
+
+    if len(z) < 2:
+        return None
+
+    try:
+        spec = np.abs(np.fft.rfft(z))
+    except Exception:
+        return None
+
+    chunk = np.array_split(spec, bins)
+    return np.array([float(np.sum(c)) for c in chunk], dtype=float)
+
+
 st.title("Binning Visualization")
 
 cohort = st.selectbox("Cohort", ["Control", "Dyslexic"], index=0)
@@ -33,15 +55,16 @@ vectors = []
 labels = []
 ids = []
 for sid, y, d in all_data:
-    x = d[["LX", "RX"]].mean(axis=1).to_numpy(dtype=float)
-    yv = d[["LY", "RY"]].mean(axis=1).to_numpy(dtype=float)
-    z = x + 1j * yv
-    spec = np.abs(np.fft.rfft(z))
-    chunk = np.array_split(spec, bins)
-    vec = np.array([float(np.sum(c)) for c in chunk], dtype=float)
+    vec = _safe_binned_fft_vector(d, bins=bins)
+    if vec is None:
+        continue
     vectors.append(vec)
     labels.append("Control" if y == 0 else "Dyslexic")
     ids.append(sid)
+
+if len(vectors) < 3:
+    st.warning("Not enough valid numeric data to compute binned FFT cluster view.")
+    st.stop()
 
 X = np.vstack(vectors)
 X2 = PCA(n_components=2, random_state=42).fit_transform(X)
