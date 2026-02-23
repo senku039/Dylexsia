@@ -68,9 +68,8 @@ def _metrics(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray) -> dict
 def _build_pipeline(model_name: str, random_state: int) -> Pipeline:
     if model_name == "logreg":
         clf = LogisticRegression(
-            solver="saga",
-            l1_ratio=0.0,
-            max_iter=8000,
+            solver="liblinear",
+            max_iter=5000,
             class_weight="balanced",
             random_state=random_state,
         )

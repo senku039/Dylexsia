@@ -40,63 +40,16 @@ def series_figure(df: pd.DataFrame, title: str) -> go.Figure:
 
 
 def fft_figure(df: pd.DataFrame, title: str) -> go.Figure:
-    numeric_df = df.select_dtypes(include=["number"]).copy()
+    x = df[["LX", "RX"]].mean(axis=1).to_numpy(dtype=float)
+    y = df[["LY", "RY"]].mean(axis=1).to_numpy(dtype=float)
+    z = x + 1j * y
+    spec = np.abs(np.fft.rfft(z))
+    f = np.arange(len(spec))
 
-    if {"LX", "RX", "LY", "RY"}.issubset(numeric_df.columns):
-        x = numeric_df[["LX", "RX"]].mean(axis=1)
-        y = numeric_df[["LY", "RY"]].mean(axis=1)
-        z = x + 1j * y
-    elif len(numeric_df.columns) > 0:
-        z = numeric_df.mean(axis=1)
-    else:
-        z = pd.Series([], dtype=float)
-
-    z = pd.to_numeric(z, errors="coerce")
-    z = z.dropna()
-    z = np.asarray(z, dtype=float)
-    z = z.flatten()
-
-    if z.size < 2:
-        fig = go.Figure()
-        fig.add_annotation(
-            text="Not enough valid numeric data for FFT",
-            x=0.5,
-            y=0.5,
-            xref="paper",
-            yref="paper",
-            showarrow=False,
-            font=dict(size=16),
-        )
-        fig.update_layout(template="plotly_white", title=title, height=420)
-        return fig
-
-    try:
-        spec = np.abs(np.fft.rfft(z))
-        f = np.arange(len(spec))
-
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=f, y=spec, mode="lines", name="|FFT|"))
-        fig.update_layout(
-            template="plotly_white",
-            title=title,
-            xaxis_title="Frequency Bin",
-            yaxis_title="Magnitude",
-            height=420,
-        )
-        return fig
-    except Exception as exc:
-        fig = go.Figure()
-        fig.add_annotation(
-            text=f"FFT failed: {exc}",
-            x=0.5,
-            y=0.5,
-            xref="paper",
-            yref="paper",
-            showarrow=False,
-            font=dict(size=14),
-        )
-        fig.update_layout(template="plotly_white", title=title, height=420)
-        return fig
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=f, y=spec, mode="lines", name="|FFT|"))
+    fig.update_layout(template="plotly_white", title=title, xaxis_title="Frequency Bin", yaxis_title="Magnitude", height=420)
+    return fig
 
 
 def stft_heatmap(df: pd.DataFrame, title: str) -> go.Figure:
