@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import subprocess
+import sys
 
 import numpy as np
 import pandas as pd
@@ -25,7 +26,7 @@ repeats = st.slider("CV repeats", 1, 5, 1)
 
 if st.button("Run Evaluation", type="primary"):
     cmd = [
-        "python",
+        sys.executable,
         "5_Production_ML/train.py",
         "--model",
         model,
@@ -97,16 +98,16 @@ if control and dys:
     roc_fig.add_trace(go.Scatter(x=fpr, y=tpr, mode="lines", name=f"ROC AUC={roc_auc:.3f}"))
     roc_fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines", name="Chance", line=dict(dash="dash")))
     roc_fig.update_layout(template="plotly_white", title="ROC Curve", xaxis_title="FPR", yaxis_title="TPR", height=400)
-    col1.plotly_chart(roc_fig, use_container_width=True)
+    col1.plotly_chart(roc_fig, width="stretch")
 
     cm_df = pd.DataFrame(cm, index=["True Control", "True Dyslexic"], columns=["Pred Control", "Pred Dyslexic"])
     cm_fig = px.imshow(cm_df, text_auto=True, color_continuous_scale="Teal", title="Confusion Matrix")
     cm_fig.update_layout(template="plotly_white", height=400)
-    col2.plotly_chart(cm_fig, use_container_width=True)
+    col2.plotly_chart(cm_fig, width="stretch")
 
     diag = pd.DataFrame({"id": idte, "y_true": yte, "y_pred": pred, "prob_dyslexic": prob})
     st.subheader("Fold Diagnostics (proxy holdout diagnostics)")
-    st.dataframe(diag, use_container_width=True)
+    st.dataframe(diag, width="stretch")
 
     csv_buf = io.StringIO()
     diag.to_csv(csv_buf, index=False)

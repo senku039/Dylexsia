@@ -57,4 +57,4 @@ for name, (x, y) in nodes.items():
 fig.update_xaxes(visible=False)
 fig.update_yaxes(visible=False)
 fig.update_layout(template="plotly_white", height=420, margin=dict(l=10, r=10, t=10, b=10))
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width="stretch")

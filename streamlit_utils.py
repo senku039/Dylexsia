@@ -40,16 +40,66 @@ def series_figure(df: pd.DataFrame, title: str) -> go.Figure:
 
 
 def fft_figure(df: pd.DataFrame, title: str) -> go.Figure:
-    x = df[["LX", "RX"]].mean(axis=1).to_numpy(dtype=float)
-    y = df[["LY", "RY"]].mean(axis=1).to_numpy(dtype=float)
-    z = x + 1j * y
-    spec = np.abs(np.fft.rfft(z))
-    f = np.arange(len(spec))
+    df_numeric = df.select_dtypes(include=["number"])
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=f, y=spec, mode="lines", name="|FFT|"))
-    fig.update_layout(template="plotly_white", title=title, xaxis_title="Frequency Bin", yaxis_title="Magnitude", height=420)
-    return fig
+    if df_numeric.shape[1] == 0:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="No numeric data available for FFT",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16),
+        )
+        fig.update_layout(template="plotly_white", title=title, height=420)
+        return fig
+
+    z = df_numeric.values.flatten()
+    z = z.astype(float)
+    z = z[~np.isnan(z)]
+
+    if len(z) < 2:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Not enough numeric data for FFT",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16),
+        )
+        fig.update_layout(template="plotly_white", title=title, height=420)
+        return fig
+
+    try:
+        spec = np.abs(np.fft.rfft(z))
+        f = np.arange(len(spec))
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=f, y=spec, mode="lines", name="|FFT|"))
+        fig.update_layout(
+            template="plotly_white",
+            title=title,
+            xaxis_title="Frequency Bin",
+            yaxis_title="Magnitude",
+            height=420,
+        )
+        return fig
+    except Exception:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="FFT computation failed due to invalid input",
+            x=0.5,
+            y=0.5,
+            xref="paper",
+            yref="paper",
+            showarrow=False,
+            font=dict(size=16),
+        )
+        fig.update_layout(template="plotly_white", title=title, height=420)
+        return fig
 
 
 def stft_heatmap(df: pd.DataFrame, title: str) -> go.Figure:

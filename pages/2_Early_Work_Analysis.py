@@ -18,7 +18,7 @@ if not data:
 subject = st.selectbox("Select Candidate", list(data.keys()))
 df = data[subject]
 
-st.plotly_chart(series_figure(df, f"Raw Eye-Tracking Signals • {cohort} • {subject}"), use_container_width=True)
+st.plotly_chart(series_figure(df, f"Raw Eye-Tracking Signals • {cohort} • {subject}"), width="stretch")
 
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Samples", len(df))

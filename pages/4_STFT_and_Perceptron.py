@@ -19,7 +19,7 @@ if not subjects:
 
 sid = st.selectbox("Candidate", list(subjects.keys()))
 df = subjects[sid]
-st.plotly_chart(stft_heatmap(df, f"STFT Spectrogram • {cohort} • {sid}"), use_container_width=True)
+st.plotly_chart(stft_heatmap(df, f"STFT Spectrogram • {cohort} • {sid}"), width="stretch")
 
 st.subheader("Perceptron Comparison (Stage-4 style linear classifier)")
 control = load_subject_table("Control")
@@ -49,4 +49,4 @@ out = pd.DataFrame({"id": idte, "true": yte, "pred": yp})
 out["status"] = np.where(out["true"] == out["pred"], "Correct", "Incorrect")
 fig = px.histogram(out, x="status", color="status", title=f"Perceptron Holdout Results • Accuracy={acc:.3f}")
 fig.update_layout(template="plotly_white", height=380)
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width="stretch")

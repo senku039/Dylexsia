@@ -20,7 +20,7 @@ if not subjects:
 sid = st.selectbox("Candidate", list(subjects.keys()))
 df = subjects[sid]
 
-st.plotly_chart(fft_figure(df, f"FFT Spectrum • {cohort} • {sid}"), use_container_width=True)
+st.plotly_chart(fft_figure(df, f"FFT Spectrum • {cohort} • {sid}"), width="stretch")
 
 st.subheader("Approximate Binning + KMeans Cluster View")
 all_control = load_subject_table("Control")
@@ -57,4 +57,4 @@ plot_df = pd.DataFrame({
 })
 fig = px.scatter(plot_df, x="pc1", y="pc2", color="cluster", symbol="label", hover_name="id", title="KMeans on Binned FFT Features")
 fig.update_layout(template="plotly_white", height=500)
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, width="stretch")
