@@ -17,6 +17,54 @@ from sklearn.preprocessing import StandardScaler
 
 from streamlit_utils import load_subject_table
 
+
+def _extract_table_block(text: str, header: str) -> str:
+    lines = text.splitlines()
+    start = None
+    for i, line in enumerate(lines):
+        if line.strip() == header.strip():
+            start = i + 1
+            break
+    if start is None:
+        return ""
+
+    block: list[str] = []
+    for line in lines[start:]:
+        if line.strip().startswith("===") and block:
+            break
+        if line.strip() == "" and block:
+            break
+        if line.strip() != "":
+            block.append(line)
+    return "\n".join(block)
+
+
+def _parse_train_stdout(stdout: str) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
+    summary_block = _extract_table_block(stdout, "=== Unbiased Outer-Fold Metrics (mean ± 95% CI) ===")
+    fold_block = _extract_table_block(stdout, "=== Fold Diagnostics ===")
+
+    summary_df = None
+    fold_df = None
+
+    if summary_block:
+        try:
+            summary_df = pd.read_fwf(io.StringIO(summary_block))
+            summary_df.columns = [str(c).strip() for c in summary_df.columns]
+            if "metric" in summary_df.columns:
+                summary_df = summary_df.set_index("metric")
+        except Exception:
+            summary_df = None
+
+    if fold_block:
+        try:
+            fold_df = pd.read_fwf(io.StringIO(fold_block))
+            fold_df.columns = [str(c).strip() for c in fold_df.columns]
+        except Exception:
+            fold_df = None
+
+    return summary_df, fold_df
+
+
 st.title("Production ML Evaluation")
 
 smoke = st.toggle("Smoke-test mode", value=True)
@@ -50,7 +98,31 @@ if st.button("Run Evaluation", type="primary"):
         st.code(proc.stderr or proc.stdout)
     else:
         st.success("Evaluation completed")
-        st.text_area("Console Summary", proc.stdout, height=220)
+
+        summary_df, fold_df = _parse_train_stdout(proc.stdout)
+
+        st.subheader("Run Evaluation Summary")
+        if summary_df is not None and not summary_df.empty:
+            st.dataframe(summary_df, width="stretch")
+        else:
+            st.info("Could not parse summary table from train output.")
+
+        st.subheader("Fold Diagnostics (from train.py)")
+        if fold_df is not None and not fold_df.empty:
+            st.dataframe(fold_df, width="stretch")
+
+            csv_data = fold_df.to_csv(index=False)
+            st.download_button(
+                "Download Fold Diagnostics CSV",
+                data=csv_data,
+                file_name="train_fold_diagnostics.csv",
+                mime="text/csv",
+            )
+        else:
+            st.info("Could not parse fold diagnostics table from train output.")
+
+        with st.expander("Raw Console Output"):
+            st.code(proc.stdout)
 
 # Dashboard visuals from lightweight local estimate for clean UI
 control = load_subject_table("Control")
