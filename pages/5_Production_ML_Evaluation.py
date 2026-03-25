@@ -22,7 +22,7 @@ def _extract_table_block(text: str, header: str) -> str:
     lines = text.splitlines()
     start = None
     for i, line in enumerate(lines):
-        if line.strip() == header.strip():
+        if header.strip() in line.strip():
             start = i + 1
             break
     if start is None:
@@ -52,6 +52,10 @@ def _parse_train_stdout(stdout: str) -> tuple[pd.DataFrame | None, pd.DataFrame 
             summary_df.columns = [str(c).strip() for c in summary_df.columns]
             if "metric" in summary_df.columns:
                 summary_df = summary_df.set_index("metric")
+            elif len(summary_df.columns) > 0:
+                first_col = str(summary_df.columns[0]).strip().lower()
+                if first_col in {"metric", "unnamed: 0", "index"}:
+                    summary_df = summary_df.set_index(summary_df.columns[0])
         except Exception:
             summary_df = None
 
@@ -59,6 +63,7 @@ def _parse_train_stdout(stdout: str) -> tuple[pd.DataFrame | None, pd.DataFrame 
         try:
             fold_df = pd.read_fwf(io.StringIO(fold_block))
             fold_df.columns = [str(c).strip() for c in fold_df.columns]
+            fold_df = fold_df.dropna(axis=1, how="all")
         except Exception:
             fold_df = None
 

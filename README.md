@@ -20,3 +20,12 @@ We've divided our entire work into easy follow along Python notebooks which you 
 ## Production-ready redesign
 A production-oriented baseline (modular data loading, feature engineering, repeated stratified cross-validation, and richer metrics) is available in [`5_Production_ML/README.md`](5_Production_ML/README.md).
 
+
+## Dashboard setup (quick start)
+Install dependencies before running Streamlit or the production CLI:
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+

@@ -41,23 +41,58 @@ st.markdown(
 )
 
 st.sidebar.title("🩺 Dyslexia Dashboard")
-st.sidebar.caption("MSc Research • End-to-End Evolution")
+st.sidebar.caption("MSc Research • Simplified Home")
 st.sidebar.info(
-    "Use the pages below to explore all 5 stages:\n"
-    "1) Project Overview\n"
-    "2) Early Work Analysis\n"
-    "3) Binning Visualization\n"
-    "4) STFT & Perceptron\n"
-    "5) Production ML Evaluation"
+    "Use the remaining analysis pages from the sidebar.\n\n"
+    "Quick info cards are now shown as popups on this home screen."
 )
 
 st.title("Dyslexia Detection Research Dashboard")
 st.markdown(
     """
 <div class='section-card'>
-This dashboard presents the complete R&D journey from early signal exploration to
-production-grade ML evaluation. Use the sidebar to navigate across pages.
+Quick educational information is available below as popup cards.
 </div>
 """,
     unsafe_allow_html=True,
+)
+
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    with st.popover("🧠 What is Dyslexia?"):
+        st.markdown(
+            """
+Dyslexia is a language-based learning difference that can affect reading fluency,
+spelling, decoding and writing patterns. It is not linked to intelligence.
+"""
+        )
+
+with c2:
+    with st.popover("✅ Common Signs"):
+        st.markdown(
+            """
+- Slow/effortful reading
+- Difficulty mapping sounds to letters
+- Spelling inconsistency
+- Skipping/re-reading words while reading
+"""
+        )
+
+with c3:
+    with st.popover("🤝 Support Paths"):
+        st.markdown(
+            """
+- Structured literacy interventions
+- School accommodations
+- Home reading routines
+- Assistive technology support
+"""
+        )
+
+st.divider()
+st.subheader("Use Our Tools")
+st.write(
+    "Open the remaining pages from the sidebar for STFT/Perceptron analysis and "
+    "Production ML evaluation."
 )
